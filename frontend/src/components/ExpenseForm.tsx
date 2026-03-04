@@ -2,10 +2,10 @@
  * Form component for adding/editing expenses
  */
 
-import React from "react";
-import { ExpenseFormData } from "../types";
-import { EXPENSE_CATEGORIES } from "../constants/categories";
-import { TextField, SelectBox, Button } from "../vibes";
+import React, {useState, useEffect } from "react";
+import { Categories, ExpenseFormData } from "../types";
+import { createCategory, fetchCategories } from "../services/api";
+import { TextField, SelectBox, Button, Modal } from "../vibes";
 import { useExpenseForm } from "../hooks/useExpenseForm";
 
 interface ExpenseFormProps {
@@ -27,6 +27,48 @@ export function ExpenseForm({
       onSubmit,
     });
 
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+  const [categories, setCategories] = useState<Categories[]>([]);
+  const today = new Date().toISOString().split("T")[0];
+
+  useEffect(() => {
+    getCategories();
+  }, []);
+
+  const getCategories = async () => {
+    try {
+      const data = await fetchCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  }
+
+  const handleAddCategory = async () => {
+    if (!newCategoryName.trim()) return;
+
+    setIsSavingCategory(true);
+
+    try {
+      const response = await createCategory(newCategoryName.trim());
+
+      const newCat = response;
+
+      setCategories((prev) => [...prev, newCat]);
+
+      handleChange("category", newCat.name);
+
+      setNewCategoryName("");
+      setIsAddingCategory(false);
+    } catch (error) {
+      console.error("Failed to save category:", error);
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
+
   const formStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
@@ -39,10 +81,14 @@ export function ExpenseForm({
     marginTop: "0.5rem",
   };
 
-  const categoryOptions = EXPENSE_CATEGORIES.map((category) => ({
-    value: category,
-    label: category,
-  }));
+  const categoryInputStyle: React.CSSProperties = {
+    display: "flex",
+    gap: "0.5rem",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    top: "0.75rem",
+    position: "relative",
+  };
 
   return (
     <form onSubmit={handleSubmit} style={formStyle}>
@@ -68,21 +114,27 @@ export function ExpenseForm({
         fullWidth
         required
       />
-
-      <SelectBox
-        label="Category"
-        options={categoryOptions}
-        value={formData.category}
-        onChange={(e) => handleChange("category", e.target.value)}
-        error={errors.category}
-        fullWidth
-        required
-      />
+      <div>
+        <div>
+          <SelectBox
+            label="Category"
+            options={categories.map((cat) => ({ value: cat.name, label: cat.name }))}
+            value={formData.category}
+            onChange={(e) => handleChange("category", e.target.value)}
+            error={errors.category}
+            action
+            onAction={() => setIsAddingCategory(true)}
+            fullWidth
+            required
+          />
+        </div>
+      </div>
 
       <TextField
         label="Date"
         type="date"
         value={formData.date}
+        max={today}
         onChange={(e) => handleChange("date", e.target.value)}
         error={errors.date}
         fullWidth
@@ -109,6 +161,40 @@ export function ExpenseForm({
           </Button>
         )}
       </div>
+      <Modal
+        isOpen={isAddingCategory}
+        onClose={() => setIsAddingCategory(false)}
+        title="Add New Category"
+      >
+        <TextField
+          label="Category Name"
+          type="text"
+          placeholder="Enter category name"
+          value={newCategoryName}
+          onChange={(e) => setNewCategoryName(e.target.value)}
+          fullWidth
+          autoFocus
+        />
+        <div style={categoryInputStyle}>
+          <Button
+            variant="primary"
+            type="button"
+            size="small"
+            onClick={handleAddCategory}
+            disabled={isSavingCategory}
+          >
+            {isSavingCategory ? "Adding..." : "Add"}
+          </Button>
+          <Button
+            variant="secondary"
+            type="button"
+            size="small"
+            onClick={() => setIsAddingCategory(false)}
+          >
+            Cancel
+          </Button>
+        </div>
+      </Modal>
     </form>
   );
 }
