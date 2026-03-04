@@ -31,7 +31,7 @@ RSpec.describe "Api::Expenses", type: :request do
         {
           expense: {
             description: "Team Lunch",
-            amount: 150.50,
+            amount: "150.50",
             category_id: food_category.id,
             date: Date.today
           }
