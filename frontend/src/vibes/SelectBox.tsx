@@ -4,11 +4,14 @@
 
 import React from "react";
 import { COLORS } from "../constants/colors";
+import { Button } from "./Button";
 
 interface SelectBoxProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
   fullWidth?: boolean;
+  action?: boolean;
+  onAction?: () => void;
   options: Array<{ value: string; label: string }>;
 }
 
@@ -17,8 +20,12 @@ export function SelectBox({
   error,
   fullWidth = false,
   options,
+  action = false,
+  onAction,
   ...props
 }: SelectBoxProps) {
+
+
   const containerStyle: React.CSSProperties = {
     display: "flex",
     flexDirection: "column",
@@ -50,9 +57,25 @@ export function SelectBox({
     marginTop: "-0.25rem",
   };
 
+  const buttonContainerStyle: React.CSSProperties = {
+    marginLeft: "0.5rem",
+  };
+
   return (
     <div style={containerStyle}>
-      {label && <label style={labelStyle}>{label}</label>}
+      <div>
+        {label && <label style={labelStyle}>{label}</label>}
+        {action && <span style={buttonContainerStyle}>
+          <Button
+            type="button"
+            size="small"
+            variant="primary"
+            onClick={onAction}
+          >
+            + New
+          </Button>
+        </span> }
+      </div>
       <select style={selectStyle} {...props}>
         <option value="">Select...</option>
         {options.map((option) => (
