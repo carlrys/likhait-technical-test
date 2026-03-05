@@ -31,7 +31,6 @@ export function ExpenseForm({
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isSavingCategory, setIsSavingCategory] = useState(false);
   const [categories, setCategories] = useState<Categories[]>([]);
-  const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
     getCategories();
@@ -134,7 +133,6 @@ export function ExpenseForm({
         label="Date"
         type="date"
         value={formData.date}
-        max={today}
         onChange={(e) => handleChange("date", e.target.value)}
         error={errors.date}
         fullWidth
