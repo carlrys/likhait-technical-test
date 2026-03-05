@@ -12,7 +12,7 @@ export interface Expense {
   updated_at: string;
 }
 
-export interface Categories {
+export interface Category {
   id: number;
   name: string;
 }

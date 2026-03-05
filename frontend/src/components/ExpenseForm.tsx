@@ -3,7 +3,7 @@
  */
 
 import React, {useState, useEffect } from "react";
-import { Categories, ExpenseFormData } from "../types";
+import { Category, ExpenseFormData } from "../types";
 import { createCategory, fetchCategories } from "../services/api";
 import { TextField, SelectBox, Button, Modal } from "../vibes";
 import { useExpenseForm } from "../hooks/useExpenseForm";
@@ -30,39 +30,35 @@ export function ExpenseForm({
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [isSavingCategory, setIsSavingCategory] = useState(false);
-  const [categories, setCategories] = useState<Categories[]>([]);
+  const [categoryError, setCategoryError] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
+    const getCategories = async () => {
+      try {
+        const data = await fetchCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      }
+    };
+
     getCategories();
   }, []);
 
-  const getCategories = async () => {
-    try {
-      const data = await fetchCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  }
-
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) return;
-
+    setCategoryError("");
     setIsSavingCategory(true);
 
     try {
-      const response = await createCategory(newCategoryName.trim());
-
-      const newCat = response;
-
+      const newCat = await createCategory(newCategoryName.trim());
       setCategories((prev) => [...prev, newCat]);
-
       handleChange("category", newCat.name);
-
       setNewCategoryName("");
       setIsAddingCategory(false);
     } catch (error) {
-      console.error("Failed to save category:", error);
+      setCategoryError("Failed to save category. Please try again.");
     } finally {
       setIsSavingCategory(false);
     }
@@ -114,19 +110,17 @@ export function ExpenseForm({
         required
       />
       <div>
-        <div>
-          <SelectBox
-            label="Category"
-            options={categories.map((cat) => ({ value: cat.name, label: cat.name }))}
-            value={formData.category}
-            onChange={(e) => handleChange("category", e.target.value)}
-            error={errors.category}
-            action
-            onAction={() => setIsAddingCategory(true)}
-            fullWidth
-            required
-          />
-        </div>
+        <SelectBox
+          label="Category"
+          options={categories.map((cat) => ({ value: cat.name, label: cat.name }))}
+          value={formData.category}
+          onChange={(e) => handleChange("category", e.target.value)}
+          error={errors.category}
+          onAction={() => setIsAddingCategory(true)}
+          action
+          fullWidth
+          required
+        />
       </div>
 
       <TextField
@@ -170,6 +164,7 @@ export function ExpenseForm({
           placeholder="Enter category name"
           value={newCategoryName}
           onChange={(e) => setNewCategoryName(e.target.value)}
+          error={categoryError}
           fullWidth
           autoFocus
         />
